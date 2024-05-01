@@ -88,10 +88,13 @@ class TemBERTure:
             out = self.model(**encoded, output_attentions=True)
             
             # mean over attentions last layer
-            attentions = out.attentions[-1].cpu().detach().numpy() # B x H x L x L
-            attentions = np.mean(attentions, axis=1) # B x L x L
-            attentions = attentions[0] # L x L
-            attentions = np.mean(attentions, axis=0) # L
+            # note that the first and last token are [CLS] and [SEP] respectively
+            # we want to remove those
+            attentions = out.attentions[-1].cpu().detach().numpy() # B x H x (L+2) x (L+2)
+            attentions = np.mean(attentions, axis=1) # B x (L+2) x (L+2)
+            attentions = attentions[0] # (L+2) x (L+2)
+            attentions = np.mean(attentions, axis=0) # L+2
+            attentions = attentions[1:-1] # L
             attention_list.append(attentions)
 
         return attention_list
